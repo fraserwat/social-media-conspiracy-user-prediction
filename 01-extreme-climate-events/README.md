@@ -12,6 +12,10 @@
 - [ ] Semantic Segmentation
 - [ ] [How to modify Loss functions for highly imbalanced models.](https://ieeexplore.ieee.org/document/9277638)
 
+## Files
+
+- `data/download_climatenet.ipynb` - this is almost entirely a fork of the original data extraction notebook. Nothing I wasn't too familiar with here so no need to look deeply into it.
+
 ## Paper Structure
 
 It's been over a decade since I wrote my undergraduate thesis so might be useful to break down (at least for the first few papers I look at) the basic structure of the papers. I'll start very pedantically, but I imagine this will get more light-touch as similar themes crop up.
