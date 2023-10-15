@@ -69,5 +69,42 @@
 
 ## Code Review
 
-- Probably worth noting that the code provided is a lot more convoluted than the neat examples I've seen so far in online courses. So even working out what is doing what is a bit of a challenge.
 - Everything seems to come together in `/train.py`, with the other files mostly being either configurations for different models (in a `model_name/params.json` format), or helper functions
+- Data is loaded in `model/input_fn.py`, and it is unclear how much of the processing discussed in the paper is done before the csvs are created, and how much is done in the code base. Process seems to go as follows:
+
+  1. `input_fn` takes in the positive and negative case dataframes, the BERT dataframe, and any model parameters.
+  1. If it is not a BERT model, the positive and negative case dataframes are fed to `load_all_data_to_df`.
+  1. Within `load_all_data_to_df`, `pos` and `neg` variables declared as the response to feedint the positive and negative case dataframes through the `load_data_to_df` function.
+  1. Judging by the SQL queries [sample_non_q_author_posts.sql](https://github.com/isvezich/cs230-political-extremism/blob/c8950ad69023a9e3e52f25b520da84499d530cc8/data/db/sql/sample_non_q_author_posts.sql) and [sample_q_author_posts.sql](https://github.com/isvezich/cs230-political-extremism/blob/c8950ad69023a9e3e52f25b520da84499d530cc8/data/db/sql/sample_q_author_posts.sql) it seems like the filtering on start and pre-q date has already been done for us.
+
+* Did some of my own filtering, but in the end the only way to get the q_level 0/1 split they had was to assume all the data processing had already been done.
+* There was an issue with the original code I assume is a mistake given the context from the paper - in the below code block, all of the titles and post texts (`selftext`) are aggregated _and then_ concatonated. This means that sequentially, all of a users post titles occur before the post content.
+
+```{python}
+def load_data_to_df(path):
+    df = pd.read_csv(path, compression='gzip')
+    # convert types (originally all strings) & filter features to date range before first q drop
+    df = df \
+        .groupby("hashed_author") \
+        .agg(
+        {
+            "title": lambda x: list(x),
+            "selftext": lambda x: list(x),
+            "q_level": "mean",
+        }
+    )
+
+    # concatenate title & body text into 1 string to create embedding from all the words author ever wrote
+    def do_join(xs):
+        return " ".join([s for s in xs if type(s) == str])
+
+    df["words"] = (df["title"] + df["selftext"]).apply(do_join)
+    df.dropna(subset=['words', 'q_level'], inplace=True)
+
+    return df
+
+```
+
+I have switched around the aggregation vs creation of `df["words"]` so that the sequential order for a given author is title1, text1, title2, text2, etc. This doesn't matter for the MLP model, but sequencing does matter for RNN and LSTM models.
+
+For the `bert.csv`, the number of rows in this CSV is ~1% out of N `non-q-posts-v2.csv` + N `q-posts-v2.csv`, so can assume that the required preprocessing has already been done for this (also as the non-q and q posts don't have a post id in the given CSVs, would run the risk of grouping different posts with the same title together).
