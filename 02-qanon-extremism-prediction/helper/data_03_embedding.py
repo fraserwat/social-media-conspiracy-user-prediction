@@ -1,25 +1,47 @@
-import pandas as pd
+import time
 import torch
+from torch.utils.data import Dataset
 from sklearn.feature_extraction.text import CountVectorizer
 from sentence_transformers import SentenceTransformer
 import data_02_aggregate as dagg
 
 
-sbert_model = SentenceTransformer("all-MiniLM-L6-v2")
+sbert_model = SentenceTransformer("all-MiniLM-L6-v2")  # .to("cuda")
+sbert_model.eval()  # set to evaluation mode
+
+
+class SentenceDataset(Dataset):
+    def __init__(self, sentences):
+        self.sentences = sentences
+
+    def __len__(self):
+        return len(self.sentences)
+
+    def __getitem__(self, idx):
+        return self.sentences[idx]
 
 
 def get_sbert_embeddings(text: list):
-    return torch.tensor(sbert_model.encode(text))
+    return torch.tensor(sbert_model.encode(text, convert_to_tensor=True))
 
 
 def flatten_and_filter_sentences(nested_sentences, sentence_length):
     flat_sentences = [
-        sentence[:sentence_length]
+        sentence
         for sublist in nested_sentences
         for sentence in sublist
         if isinstance(sentence, str) and len(sentence.strip()) > 0
     ]
-    return flat_sentences
+    return flat_sentences[:sentence_length]
+
+
+def remaining_time(start_time, idx, n_idx):
+    estimated_total_time = ((time.time() - start_time) / (idx + 1)) * n_idx
+    time_remaining = estimated_total_time - (time.time() - start_time)
+    # Convert estimated remaining time from seconds to HH:MM:SS format
+    hours, remainder = divmod(time_remaining, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
 
 
 def convert_bert_rnn_mlp_df_to_tensor(df, params):
@@ -27,17 +49,20 @@ def convert_bert_rnn_mlp_df_to_tensor(df, params):
     sentences_length = params.get("sentences_length", 150)
 
     print("Performing rnn_mlp SBERT Embedding...")
-    for nested_sentences in df["text"]:
+    start_time = time.time()
+    for idx, nested_sentences in enumerate(df["text"]):
         valid_sentences = flatten_and_filter_sentences(
             nested_sentences, sentences_length
         )
-
-        # Ensuring sentences are valid and non-empty
         if not valid_sentences:
-            print(f"No valid sentences found for entry: {nested_sentences}")
             continue
-
         sentences_embedding = get_sbert_embeddings(valid_sentences)
+        if idx % 2**5 == 0:
+            torch.cuda.empty_cache()
+
+        print(
+            f"Embedded row {idx + 1} of {len(df['text'])}. Est: {remaining_time(start_time, idx, len(df['text']))} ({round(100 * (idx + 1) / len(df['text']), 1)}%)"
+        )
         authors.append(sentences_embedding)
 
     print("...Completed SBERT Embedding!")
@@ -45,15 +70,18 @@ def convert_bert_rnn_mlp_df_to_tensor(df, params):
     # Find the global max number of sentences to pad all authors to the same shape.
     max_sentences = max(embedding.shape[0] for embedding in authors)
 
-    padded_authors = []
-    for author_embedding in authors:
-        # Padding: Ensure all authors have the same number of sentences.
-        padding = torch.zeros(
-            max_sentences - author_embedding.shape[0], author_embedding.shape[1]
+    padded_authors = [
+        torch.cat(
+            [
+                author_embedding,
+                torch.zeros(
+                    max_sentences - author_embedding.shape[0], author_embedding.shape[1]
+                ),
+            ],
+            dim=0,
         )
-        padded_author = torch.cat([author_embedding, padding], dim=0)
-
-        padded_authors.append(padded_author)
+        for author_embedding in authors
+    ]
 
     # Combine all authors into a single tensor.
     return torch.stack(padded_authors)
@@ -86,19 +114,21 @@ def convert_bert_lstm_df_to_tensor(df, params):
     max_chunks = max(tensor.shape[0] for author in authors for tensor in author)
 
     padded_authors = []
+    embedding_dim = authors[0][0].shape[1]
+
     for author in authors:
         padded_author = []
 
         # Inner padding: Ensure all posts have same number of chunks.
         for post in author:
-            padding = torch.zeros(max_chunks - post.shape[0], post.shape[1])
+            padding = torch.zeros(max_chunks - post.shape[0], embedding_dim)
             padded_post = torch.cat([post, padding], dim=0)
             padded_author.append(padded_post)
 
         # Outer padding: Ensure all authors have same number of posts.
         while len(padded_author) < max_posts:
             # Pad using zeros. Ensure it has the correct shape [max_chunks, embedding_dim].
-            padded_author.append(torch.zeros(max_chunks, post.shape[1]))
+            padded_author.append(torch.zeros(max_chunks, embedding_dim))
 
         # Combine padded posts into a tensor and add it to the padded_authors list.
         padded_authors.append(torch.stack(padded_author))
@@ -112,7 +142,7 @@ def convert_to_tensor(column):
     return torch.from_numpy(vectorizer.toarray())
 
 
-def embeddings(params: dict) -> pd.DataFrame:
+def embeddings(params: dict) -> torch.Tensor:
     # Fetching the right pre-processed dataset based on a BERT or non-BERT embedding.
     print("Loading QAnon dataset and creating df...")
     if params["model"].startswith("BERT"):
@@ -135,4 +165,8 @@ def embeddings(params: dict) -> pd.DataFrame:
     return words
 
 
-print(embeddings(params={"model": "BERT_RNN", "posts_length": 1}).shape)
+for mod in ["TASK_SPECIFIC", "BERT_LSTM", "BERT_RNN"]:
+    torch.save(
+        embeddings(params={"model": mod}),
+        f"02-qanon-extremism-prediction/data/{mod}.pth",
+    )
