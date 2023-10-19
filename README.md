@@ -1,15 +1,23 @@
-# Using pre-Q sequences of reddit posts to predict user-level QAanon participation
+# Using Sequences of Reddit Posts to Predict User-Level QAnon Participation
+
+This project replicates the findings in a paper predicting a user's participation in conspiracy theory subreddits using past posts. I have expanded on the original paper in three substantial ways:
+
+1. Due to the [growing dominance of PyTorch](https://www.assemblyai.com/blog/pytorch-vs-tensorflow-in-2023/) I have refactored everything from Tensorflow to PyTorch. Therefore, there are a lot of one-line TF functions or class methods which I had to write myself.
+1. The LLM-boom of the last year largely happened after the publishing of this paper. I have experimented with other SBERT transformers in an attempt to improve on the original accuracy score.
+1. In an effort to improve model interpretability, I have implemented explanatory outputs using Retrieval Augmented Generation (RAG). Our primary model gives a prediction, then our RAG tells us why.
 
 **Original Paper**: http://cs230.stanford.edu/projects_fall_2022/reports/22.pdf
 
-**Original Codebase:** https://github.com/isvezich/cs230-political-extremism
+**Paper GitHub Repo:** https://github.com/isvezich/cs230-political-extremism
 
-**Authors**: Lillian Ma, Stephanie Vezich
+## Key Skills Developed from Project
 
-## What can I learn from this paper?
+- Natural Language Processing.
+- Building Machine Learning Pipelines on DataBricks.
+- Understanding of why we use different Deep Learning architectures (e.g. RNN vs LSTM).
+- Retrieval Augmented Generation.
 
-- [ ] Natural Language Processing
-- [ ] Pros / Cons of NN Architectures (RNN vs LSTM).
+#### @TODO: EVERYTHING UNDER THIS SHOULD BE REWRITTEN TO SHOW PEOPLE HOW TO REPLICATE / QUICK REVIEW OF PERFORMANCE / CHANGES.
 
 ## Files
 
