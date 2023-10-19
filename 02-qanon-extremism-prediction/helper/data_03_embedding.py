@@ -1,24 +1,13 @@
 import time
 import torch
-from torch.utils.data import Dataset
-from sklearn.feature_extraction.text import CountVectorizer
+import pandas as pd
+from torch.utils.data import DataLoader
 from sentence_transformers import SentenceTransformer
 import data_02_aggregate as dagg
 
 
 sbert_model = SentenceTransformer("all-MiniLM-L6-v2")  # .to("cuda")
 sbert_model.eval()  # set to evaluation mode
-
-
-class SentenceDataset(Dataset):
-    def __init__(self, sentences):
-        self.sentences = sentences
-
-    def __len__(self):
-        return len(self.sentences)
-
-    def __getitem__(self, idx):
-        return self.sentences[idx]
 
 
 def get_sbert_embeddings(text: list):
@@ -137,9 +126,44 @@ def convert_bert_lstm_df_to_tensor(df, params):
     return torch.stack(padded_authors)
 
 
-def convert_to_tensor(column):
-    vectorizer = CountVectorizer().fit_transform(column.apply(" ".join))
-    return torch.from_numpy(vectorizer.toarray())
+def convert_to_tensor(df: pd.DataFrame):
+    # need to flattern into a list of words
+    df["tokens"] = df["words"].apply(
+        lambda posts: [word for post in posts for word in post.split()]
+    )
+    all_tokens = [
+        token for tokens_list in df["tokens"].tolist() for token in tokens_list
+    ]
+    vocab = set(all_tokens)
+
+    # Map our vocab to integer idenfiers
+    token_to_id = {token: i for i, token in enumerate(vocab)}
+    # Embedding layers don't take str, to get embeddings for each word need to convert text into IDs using vocab mapping
+    df["token_ids"] = df["tokens"].apply(
+        lambda tokens: [token_to_id[token] for token in tokens]
+    )
+
+    dataloader = DataLoader(
+        list(df["token_ids"]), batch_size=32, shuffle=False, collate_fn=lambda x: x
+    )
+
+    # 3. Embedding & Averaging
+    embeddings = torch.nn.Embedding(len(vocab), 512)
+
+    user_embeddings = []
+    for batch in dataloader:
+        batch_embeddings = [embeddings(torch.tensor(user)).mean(0) for user in batch]
+        user_embeddings.extend(batch_embeddings)
+
+    # Convert q_levels to a tensor
+    q_levels_tensor = (
+        torch.tensor(df["q_level"].values).float().unsqueeze(1)
+    )  # unsqueeze to make it a column vector
+
+    # Concatenate the user_embeddings_tensor and q_levels_tensor along columns
+    final_tensor = torch.cat((torch.stack(user_embeddings), q_levels_tensor), dim=1)
+
+    return final_tensor
 
 
 def embeddings(params: dict) -> torch.Tensor:
@@ -152,21 +176,39 @@ def embeddings(params: dict) -> torch.Tensor:
         print("Making word embedding dataset")
         df = dagg.aggregate_non_bert_data()
 
+    print(df.head())
+
+    # @TODO: Get rid of this line, get the tensor models into Google Drive or something.
+    df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)
+    df = df_shuffled.iloc[:2500]
+
     # Converting dataset to numerical tensor.
-    if params["model"].startswith("BERT"):
-        if params["model"] == "BERT_LSTM":
-            words = convert_bert_lstm_df_to_tensor(df, params=params)
-        else:
-            # At this stage in the processing, the embedding for BERT_RNN and BERT_MLP is the same.
-            words = convert_bert_rnn_mlp_df_to_tensor(df, params=params)
+    if params["model"] == "BERT_LSTM":
+        words = convert_bert_lstm_df_to_tensor(df, params=params)
+    elif params["model"].startswith("BERT"):
+        # embedding for BERT_RNN and BERT_MLP is identical.
+        words = convert_bert_rnn_mlp_df_to_tensor(df, params=params)
     else:
-        words = convert_to_tensor(df["words"])
+        # This will just be MLP
+        words = convert_to_tensor(df=df)
 
     return words
 
 
-for mod in ["TASK_SPECIFIC", "BERT_LSTM", "BERT_RNN"]:
+# for mod in ["TASK_SPECIFIC", "BERT_LSTM", "BERT_RNN"]:
+for mod in ["MLP"]:
     torch.save(
         embeddings(params={"model": mod}),
         f"02-qanon-extremism-prediction/data/{mod}.pth",
     )
+
+
+# Load the tensor or model from the .pth file
+tensor_or_model = torch.load("02-qanon-extremism-prediction/data/MLP.pth")
+# if isinstance(tensor_or_model, torch.Tensor):
+print(tensor_or_model)
+print(tensor_or_model.shape)
+
+# tensor_or_model = torch.load("02-qanon-extremism-prediction/data/BERT_RNN.pth")
+# if isinstance(tensor_or_model, torch.Tensor):
+#     print(tensor_or_model.shape)
