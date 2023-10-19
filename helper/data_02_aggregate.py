@@ -4,7 +4,7 @@ import pandas as pd
 
 def load_csvs(post_csvs: List[str]) -> pd.DataFrame:
     return pd.concat(
-        [pd.read_csv(f"02-qanon-extremism-prediction/data/{csv}") for csv in post_csvs],
+        [pd.read_csv(f"data/{csv}") for csv in post_csvs],
         ignore_index=True,
     )
 

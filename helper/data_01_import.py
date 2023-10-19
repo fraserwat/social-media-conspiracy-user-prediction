@@ -1,7 +1,6 @@
 """
 Importing into 01_exploratory_data_analysis AND 02_ because I want to be able to download the data
-in order to replicate it. Putting it in the child directory of the 02-qanon-extremism-prediction
-project so it doesn't get confused with other projects data.
+in order to replicate it.
 """
 
 import gzip
@@ -9,7 +8,7 @@ import os
 import requests
 
 
-def download_and_unzip(output_dir="02-qanon-extremism-prediction/data") -> None:
+def download_and_unzip(output_dir="data") -> None:
     """
     Helper function to download the data.
     Does not return anything, but puts everything (by default) into a `data` subfolder.

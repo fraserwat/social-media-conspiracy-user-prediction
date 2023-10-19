@@ -179,8 +179,8 @@ def embeddings(params: dict) -> torch.Tensor:
     print(df.head())
 
     # @TODO: Get rid of this line, get the tensor models into Google Drive or something.
-    df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)
-    df = df_shuffled.iloc[:2500]
+    # df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)
+    # df = df_shuffled.iloc[:2500]
 
     # Converting dataset to numerical tensor.
     if params["model"] == "BERT_LSTM":
@@ -199,16 +199,16 @@ def embeddings(params: dict) -> torch.Tensor:
 for mod in ["MLP"]:
     torch.save(
         embeddings(params={"model": mod}),
-        f"02-qanon-extremism-prediction/data/{mod}.pth",
+        f"data/{mod}.pth",
     )
 
 
 # Load the tensor or model from the .pth file
-tensor_or_model = torch.load("02-qanon-extremism-prediction/data/MLP.pth")
+tensor_or_model = torch.load("data/MLP.pth")
 # if isinstance(tensor_or_model, torch.Tensor):
 print(tensor_or_model)
 print(tensor_or_model.shape)
 
-# tensor_or_model = torch.load("02-qanon-extremism-prediction/data/BERT_RNN.pth")
+# tensor_or_model = torch.load("data/BERT_RNN.pth")
 # if isinstance(tensor_or_model, torch.Tensor):
 #     print(tensor_or_model.shape)

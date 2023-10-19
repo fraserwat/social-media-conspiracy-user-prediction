@@ -6,7 +6,7 @@ from torch.utils.data import random_split, DataLoader
 
 
 # Splitting tensor into input and target (assuming the last column is the target)
-tensor = torch.load("02-qanon-extremism-prediction/data/MLP.pth")
+tensor = torch.load("data/MLP.pth")
 inputs = tensor[:, :-1]  # Feature columns
 targets = tensor[:, -1].unsqueeze(1)  # Target column, ensure it's a column vector
 
@@ -44,7 +44,7 @@ train_validate(
 )
 
 # Load the last checkpoint with the best model.
-model.load_state_dict(torch.load("02-qanon-extremism-prediction/checkpoint.pth"))
+model.load_state_dict(torch.load("checkpoint.pth"))
 
 # Finally, evaluate the model.
 test_model(model=model, testing_data_loader=test_loader, loss_function=log_loss)
