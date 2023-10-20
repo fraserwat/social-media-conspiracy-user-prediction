@@ -3,7 +3,6 @@ from helper.early_stopping import EarlyStopping
 
 
 def accuracy(preds, y):
-    print(preds.shape)
     rounded_preds = torch.round(preds)
     correct = (rounded_preds == y).float()
     return correct.sum() / len(correct)
@@ -20,11 +19,7 @@ def train_validate(
         model.train()
         training_loss = 0.0
 
-        for batch in training_loader:
-            # Running through each batch in training loader, assuming response in last column.
-            batch_inputs = batch[:, :-1]
-            batch_targets = batch[:, -1]
-
+        for batch_inputs, batch_targets in training_loader:
             preds = model(batch_inputs)
             loss = loss_function(preds.squeeze(), batch_targets)
 
@@ -39,11 +34,7 @@ def train_validate(
         validation_loss = 0.0
 
         with torch.no_grad():
-            for batch in validation_loader:
-                # Running through batches in validation set, assuming response in final col
-                batch_inputs = batch[:, :-1]
-                batch_targets = batch[:, -1]
-
+            for batch_inputs, batch_targets in validation_loader:
                 preds = model(batch_inputs)
                 loss = loss_function(preds.squeeze(), batch_targets)
                 validation_loss += loss.item()
@@ -72,11 +63,7 @@ def test_model(model, testing_data_loader, loss_function):
 
     with torch.no_grad():
         # Run through batches in the data loader
-        for batch in testing_data_loader:
-            # Assuming the response is in the last column.
-            batch_inputs = batch[:, :-1]
-            batch_targets = batch[:, -1]
-
+        for batch_inputs, batch_targets in testing_data_loader:
             preds = model(batch_inputs)
 
             loss = loss_function(preds.squeeze(), batch_targets)

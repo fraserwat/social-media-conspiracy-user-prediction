@@ -1,13 +1,13 @@
 import torch
 import torch.optim as optimizer
-from models.MLP import MLP
+from models.RNN import RNN
+from torch.utils.data import random_split, DataLoader, TensorDataset
 from helper.pytorch_utils import train_validate, test_model
-from torch.utils.data import TensorDataset, DataLoader, random_split
 
 
 # Loading tensor input and response.
-tensor = torch.load("data/TASK_SPECIFIC_X.pth")
-response = torch.load("data/TASK_SPECIFIC_y.pth")
+tensor = torch.load("data/BERT_RNN_X.pth")
+response = torch.load("data/BERT_RNN_y.pth")
 
 # Combine the tensor and response into a single dataset
 combined_dataset = TensorDataset(tensor, response)
@@ -21,15 +21,18 @@ train_dataset, valid_dataset, test_dataset = random_split(
 )
 
 # Create Dataloaders
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-valid_loader = DataLoader(valid_dataset, batch_size=32, shuffle=False)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+batch_size = 32
+train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+valid_loader = DataLoader(valid_dataset, batch_size=batch_size, shuffle=False)
+test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 # Now we can define the model
-model = MLP(input_size=tensor.shape[1])
+# Tensor shape is in format [batch_size, sequence_length, embedding_dim], so we want embedding_dim, tensor.shape[2]
+model = RNN(input_size=tensor.shape[2])
 
 # L2 Regularisation is given through weight decay.
 adam_optimizer = optimizer.Adam(model.parameters(), weight_decay=1e-4)
+
 
 # Training Loop
 num_epochs = 30  # Adjust based on your needs

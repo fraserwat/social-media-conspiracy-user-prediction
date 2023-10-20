@@ -1,6 +1,7 @@
 import time
 import torch
 import pandas as pd
+from typing import Tuple
 from torch.utils.data import DataLoader
 from sentence_transformers import SentenceTransformer
 import data_02_aggregate as dagg
@@ -73,7 +74,10 @@ def convert_bert_rnn_mlp_df_to_tensor(df, params):
     ]
 
     # Combine all authors into a single tensor.
-    return torch.stack(padded_authors)
+    sequence_tensor = torch.stack(padded_authors)
+    response_tensor = torch.tensor(df["q_level"].values).float()
+
+    return sequence_tensor, response_tensor
 
 
 def convert_bert_lstm_df_to_tensor(df, params):
@@ -82,6 +86,7 @@ def convert_bert_lstm_df_to_tensor(df, params):
 
     # Collect all the author_tensors first to find global max number of posts and chunks per post.
     print("Performing SBERT Embedding...")
+    start_time = time.time()
     for _, posts in df["text"].items():
         author_tensor = []
 
@@ -96,6 +101,9 @@ def convert_bert_lstm_df_to_tensor(df, params):
             author_tensor.append(post_embedding)
 
         authors.append(author_tensor)
+        print(
+            f"Embedded row {_ + 1} of {len(df['text'])}. Est: {remaining_time(start_time, _, len(df['text']))} ({round(100 * (_ + 1) / len(df['text']), 1)}%)"
+        )
     print("...Completed SBERT Embedding!")
 
     # Find the global max number of posts and chunks to pad all authors to the same shape.
@@ -122,8 +130,11 @@ def convert_bert_lstm_df_to_tensor(df, params):
         # Combine padded posts into a tensor and add it to the padded_authors list.
         padded_authors.append(torch.stack(padded_author))
 
-    # Combine all authors into a single tensor.
-    return torch.stack(padded_authors)
+    # Combine all authors into a single tensor, and define response as tensor
+    embedding_tensor = torch.stack(padded_authors)
+    response_tensor = torch.tensor(df["q_level"].values).float()
+
+    return embedding_tensor, response_tensor
 
 
 def convert_to_tensor(df: pd.DataFrame):
@@ -155,18 +166,13 @@ def convert_to_tensor(df: pd.DataFrame):
         batch_embeddings = [embeddings(torch.tensor(user)).mean(0) for user in batch]
         user_embeddings.extend(batch_embeddings)
 
-    # Convert q_levels to a tensor
-    q_levels_tensor = (
-        torch.tensor(df["q_level"].values).float().unsqueeze(1)
-    )  # unsqueeze to make it a column vector
+    input_tensor = torch.stack(user_embeddings)
+    response_tensor = torch.tensor(df["q_level"].values).float()
 
-    # Concatenate the user_embeddings_tensor and q_levels_tensor along columns
-    final_tensor = torch.cat((torch.stack(user_embeddings), q_levels_tensor), dim=1)
-
-    return final_tensor
+    return input_tensor, response_tensor
 
 
-def embeddings(params: dict) -> torch.Tensor:
+def embeddings(params: dict) -> Tuple[torch.Tensor, torch.Tensor]:
     # Fetching the right pre-processed dataset based on a BERT or non-BERT embedding.
     print("Loading QAnon dataset and creating df...")
     if params["model"].startswith("BERT"):
@@ -176,39 +182,36 @@ def embeddings(params: dict) -> torch.Tensor:
         print("Making word embedding dataset")
         df = dagg.aggregate_non_bert_data()
 
-    print(df.head())
-
     # @TODO: Get rid of this line, get the tensor models into Google Drive or something.
-    # df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)
-    # df = df_shuffled.iloc[:2500]
+    df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)
+    df = df_shuffled.iloc[:1000]
 
     # Converting dataset to numerical tensor.
     if params["model"] == "BERT_LSTM":
-        words = convert_bert_lstm_df_to_tensor(df, params=params)
+        words, response = convert_bert_lstm_df_to_tensor(df, params=params)
     elif params["model"].startswith("BERT"):
         # embedding for BERT_RNN and BERT_MLP is identical.
-        words = convert_bert_rnn_mlp_df_to_tensor(df, params=params)
+        words, response = convert_bert_rnn_mlp_df_to_tensor(df, params=params)
     else:
         # This will just be MLP
-        words = convert_to_tensor(df=df)
+        words, response = convert_to_tensor(df=df)
 
-    return words
+    return words, response
 
 
-# for mod in ["TASK_SPECIFIC", "BERT_LSTM", "BERT_RNN"]:
-for mod in ["MLP"]:
-    torch.save(
-        embeddings(params={"model": mod}),
-        f"data/{mod}.pth",
-    )
+arr = ["TASK_SPECIFIC", "BERT_RNN", "BERT_LSTM"]
+
+for mod in arr:
+    X, y = embeddings(params={"model": mod})
+    print(f"Saving data/{mod}_X.pth...")
+    print(f"Saving data/{mod}_y.pth...")
+    torch.save(X, f"data/{mod}_X.pth")
+    torch.save(y, f"data/{mod}_y.pth")
 
 
 # Load the tensor or model from the .pth file
-tensor_or_model = torch.load("data/MLP.pth")
-# if isinstance(tensor_or_model, torch.Tensor):
-print(tensor_or_model)
-print(tensor_or_model.shape)
-
-# tensor_or_model = torch.load("data/BERT_RNN.pth")
-# if isinstance(tensor_or_model, torch.Tensor):
-#     print(tensor_or_model.shape)
+for mod in arr:
+    tensor_or_model = torch.load(f"data/{mod}_X.pth")
+    print(f"{mod}_X", tensor_or_model.shape)
+    tensor_or_model = torch.load(f"data/{mod}_y.pth")
+    print(f"{mod}_y", tensor_or_model.shape)
