@@ -17,12 +17,12 @@ class MLP(torch.nn.Module):
         super().__init__()
 
         self.linear1 = torch.nn.Linear(input_size, 256)
-        self.linear2 = torch.nn.Linear(256, 128)
         self.linear1_batchnorm = torch.nn.BatchNorm1d(256)
+
+        self.linear2 = torch.nn.Linear(256, 128)
         self.linear2_batchnorm = torch.nn.BatchNorm1d(128)
 
         self.output = torch.nn.Linear(128, 1)
-
         self.activation = torch.nn.ReLU()
 
     def forward(self, x):
@@ -35,4 +35,5 @@ class MLP(torch.nn.Module):
         x = self.linear2_batchnorm(x)
 
         x = self.output(x)
+
         return torch.sigmoid(x)

@@ -1,14 +1,9 @@
-"""
-Importing into 01_exploratory_data_analysis AND 02_ because I want to be able to download the data
-in order to replicate it.
-"""
-
-import gzip
 import os
+from typing import List
 import requests
 
 
-def download_and_unzip(output_dir="data") -> None:
+def download(output_dir="data") -> List[str]:
     """
     Helper function to download the data.
     Does not return anything, but puts everything (by default) into a `data` subfolder.
@@ -24,12 +19,12 @@ def download_and_unzip(output_dir="data") -> None:
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
+    filepaths = []
+
     for url in download_urls:
+        print(f"Downloading from {url}...")
         # Define file names based on the URL
         file_name = os.path.join(output_dir, url.split("/")[-1])
-        decompressed_file_name = os.path.join(
-            output_dir, url.split("/")[-1].rsplit(".", 1)[0]
-        )
 
         # Download the .gz file
         response = requests.get(url, stream=True, timeout=1e6)
@@ -37,11 +32,8 @@ def download_and_unzip(output_dir="data") -> None:
             for chunk in response.iter_content(chunk_size=8192):
                 if chunk:  # filter out keep-alive new chunks
                     gz_file.write(chunk)
+        print(f"... Finished downloading from {url}!")
 
-        # Decompress the .gz file
-        with gzip.open(file_name, "rb") as f_in:
-            with open(decompressed_file_name, "wb") as f_out:
-                f_out.write(f_in.read())
+        filepaths.append(file_name)
 
-        # Delete the original .gz file
-        os.remove(file_name)
+    return filepaths

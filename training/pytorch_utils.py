@@ -1,5 +1,5 @@
 import torch
-from helper.early_stopping import EarlyStopping
+from training.early_stopping import EarlyStopping
 
 
 def accuracy(preds, y):
@@ -9,10 +9,17 @@ def accuracy(preds, y):
 
 
 def train_validate(
-    model, training_loader, validation_loader, loss_function, optimizer, n_epochs=30
+    # TODO: This is used for all word_XXX_model functions, rename / refactor accordingly.
+    model,
+    training_loader,
+    validation_loader,
+    loss_function,
+    optimizer,
+    n_epochs=30,
 ):
+    print("train_validate()")
     # Initialise Early Stopping
-    early_stopping = EarlyStopping(patience=3, verbose=True)
+    early_stopping = EarlyStopping(patience=5, verbose=True)
 
     for epoch in range(n_epochs):
         # Training Phase
@@ -32,6 +39,8 @@ def train_validate(
         # Validation Phase
         model.eval()
         validation_loss = 0.0
+
+        print("validation process beginning...")
 
         with torch.no_grad():
             for batch_inputs, batch_targets in validation_loader:

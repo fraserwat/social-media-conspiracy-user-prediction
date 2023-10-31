@@ -10,20 +10,15 @@ import torch
 
 
 class RNN(torch.nn.Module):
-    def __init__(self, input_size):
+    def __init__(self, input_size, hidden_size: int = 64, dropout: float = 0.05):
         super().__init__()
 
-        self.rnn = torch.nn.RNN(input_size=input_size, hidden_size=64)
-        self.rnn_batchnorm = torch.nn.BatchNorm1d(64)
-        self.output = torch.nn.Linear(64, 1)
+        self.rnn = torch.nn.RNN(input_size=input_size, hidden_size=hidden_size)
+        self.output = torch.nn.Linear(hidden_size, 1)
 
     def forward(self, x):
         # unpacking the RNN output and hidden state
-        x, hidden_state = self.rnn(x)
-
-        # we want the last output / final state from the sequence of outputs
-        # x is in the shape (batch_size, sequence_length, hidden_size)
-        x = self.rnn_batchnorm(x[:, -1, :])
+        x, _ = self.rnn(x)
         x = self.output(x)
 
         return torch.sigmoid(x)
