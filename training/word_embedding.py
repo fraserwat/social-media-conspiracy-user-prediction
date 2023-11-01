@@ -26,7 +26,9 @@ def word_embedded_model(input_data, vectorize_layer, model, params):
             )
 
         dataset = TensorDataset(data_padded, torch.tensor(data[1], dtype=torch.float))
-        loader = DataLoader(dataset, batch_size=32, shuffle=True)
+        loader = DataLoader(
+            dataset, batch_size=params.get("batch_size", 32), shuffle=True
+        )
 
         return loader
 
@@ -35,16 +37,20 @@ def word_embedded_model(input_data, vectorize_layer, model, params):
     test_loader = create_data_loader(input_data["test"], max_length)
 
     # Initialise MLP model
-    model = model(input_size=max_length)
+    model = model(input_size=max_length, dropout_rate=params.get("dropout_rate", 0.0))
 
     # Use Binary Cross Entropy Loss and Adam optimizer
     loss = torch.nn.BCELoss()
     adam = torch.optim.Adam(
-        model.parameters(), weight_decay=params.get("l2_reg_lambda", 0)
+        model.parameters(),
+        weight_decay=params.get("l2_penalty_weight", 0),
+        lr=params.get("learning_rate", 0.001),
     )
 
     # Train and validate the model
     train_validate(model, train_loader, val_loader, loss, adam)
 
     # Test the model
-    test_model(model, test_loader, loss)
+    loss, accuracy, recall, f1 = test_model(model, test_loader, loss)
+
+    return loss, accuracy, recall, f1

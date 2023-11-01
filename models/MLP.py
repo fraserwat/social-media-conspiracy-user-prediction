@@ -9,10 +9,11 @@ to convert our predictions to probability space
 """
 
 import torch
+import torch.nn as nn
 
 
 class MLP(torch.nn.Module):
-    def __init__(self, input_size):
+    def __init__(self, input_size, dropout_rate=0.0):
         # This line ensures that the superclass (torch.nn.Module) is called and initialised.
         super().__init__()
 
@@ -25,14 +26,18 @@ class MLP(torch.nn.Module):
         self.output = torch.nn.Linear(128, 1)
         self.activation = torch.nn.ReLU()
 
+        self.dropout = nn.Dropout(dropout_rate)
+
     def forward(self, x):
         x = self.linear1(x)
-        x = self.activation(x)
         x = self.linear1_batchnorm(x)
+        x = self.activation(x)
+        x = self.dropout(x)
 
         x = self.linear2(x)
-        x = self.activation(x)
         x = self.linear2_batchnorm(x)
+        x = self.activation(x)
+        x = self.dropout(x)
 
         x = self.output(x)
 

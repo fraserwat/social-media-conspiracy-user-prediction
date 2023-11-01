@@ -1,4 +1,5 @@
 import torch
+import itertools
 from processing import download, load, tensor, split
 from embedding import vectorise, trans
 from training import word_embedding
@@ -91,21 +92,21 @@ def model_fn(inputs: dict, params: dict):
         )
 
         if model_type.endswith("MLP"):
-            word_embedding.word_embedded_model(
+            results = word_embedding.word_embedded_model(
                 input_data=inputs,
                 vectorize_layer=vectorise_fn,
                 model=MLP.MLP,
                 params=test_params,
             )
         elif model_type.endswith("RNN"):
-            word_embedding.word_embedded_model(
+            results = word_embedding.word_embedded_model(
                 input_data=inputs,
                 vectorize_layer=vectorise_fn,
                 model=RNN.RNN,
                 params=test_params,
             )
         elif model_type.endswith("LSTM"):
-            word_embedding.word_embedded_model(
+            results = word_embedding.word_embedded_model(
                 input_data=inputs,
                 vectorize_layer=vectorise_fn,
                 model=LSTM.BaselineLSTM,
@@ -114,25 +115,47 @@ def model_fn(inputs: dict, params: dict):
         else:
             raise NotImplementedError
 
-    return None
+    return results
 
 
-# download.download()
+grid_search = {
+    "l2_penalty_weight": [0.001, 0.01, 0.1],
+    "learning_rate": [0.0001, 0.001],
+    "batch_size": [16, 32],
+    "dropout_rate": [0.1, 0.25],
+}
 
-test_params["model"] = "MLP"
-tensor_dict = input_fn(
-    pos_path=POS_DIR, neg_path=NEG_DIR, bert_path=BERT_DIR, params=test_params
-)
-model_fn(tensor_dict, test_params)
 
-# test_params["model"] = "RNN"
-# tensor_dict = input_fn(
-#     pos_path=POS_DIR, neg_path=NEG_DIR, bert_path=BERT_DIR, params=test_params
-# )
-# model_fn(tensor_dict, test_params)
+param_names = grid_search.keys()
+param_combinations = list(itertools.product(*grid_search.values()))
 
-# test_params["model"] = "LSTM"
-# tensor_dict = input_fn(
-#     pos_path=POS_DIR, neg_path=NEG_DIR, bert_path=BERT_DIR, params=test_params
-# )
-# model_fn(tensor_dict, test_params)
+# TODO: This whole gridsearch should be cleaner.
+param_result_list = []
+
+for idx, combi in enumerate(param_combinations):
+    combi_dict = dict(zip(param_names, combi))
+    # Updating the input parameters with those of the current grid search
+    test_params.update(combi_dict)
+
+    # Creating our input and response tensors
+    tensor_dict = input_fn(
+        pos_path=POS_DIR, neg_path=NEG_DIR, bert_path=BERT_DIR, params=test_params
+    )
+    # Training, validation and testing of model.
+    loss, accuracy, recall, f1 = model_fn(tensor_dict, test_params)
+
+    # Gather results and append them to the grid search results.
+    results = {
+        k: v
+        for k, v in zip(
+            ["loss", "accuracy", "recall", "f1"], (loss, accuracy, recall, f1)
+        )
+    }
+    param_result_list.append((combi_dict, results))
+
+# TODO: End of grid search should output best config.
+# Print out param results for grid search
+print("\n" * 5)
+for combi, results in param_result_list:
+    print(combi)
+    print(results)
