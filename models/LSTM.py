@@ -9,7 +9,6 @@ sigmoid activation on the output layer, cost function, Adam optimizer, and regul
 strategies as the baseline models.
 """
 
-import torch
 import torch.nn as nn
 
 

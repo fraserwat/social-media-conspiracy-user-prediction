@@ -1,7 +1,8 @@
 import torch
 from processing import download, load, tensor, split
 from embedding import vectorise, trans
-from training import mlp_model, rnn_model, lstm_model
+from training import word_embedding
+from models import MLP, RNN, LSTM
 
 # TODO: Maybe use argparse to make this cleaner.
 # TODO: What is the difference between the `logging` library and normal print statements
@@ -9,7 +10,7 @@ from training import mlp_model, rnn_model, lstm_model
 test_params = {
     "sample_rate": 0.15,
     # "embedding": None,
-    "model": "LSTM",
+    "model": "MLP",
     "split": [0.7, 0.15, 0.15],
     "epochs": 100,
     "max_features": 2**16,
@@ -90,19 +91,26 @@ def model_fn(inputs: dict, params: dict):
         )
 
         if model_type.endswith("MLP"):
-            mlp_model.word_mlp_model(
-                input_data=inputs, vectorize_layer=vectorise_fn, params=test_params
+            word_embedding.word_embedded_model(
+                input_data=inputs,
+                vectorize_layer=vectorise_fn,
+                model=MLP.MLP,
+                params=test_params,
             )
         elif model_type.endswith("RNN"):
-            rnn_model.word_rnn_model(
-                input_data=inputs, vectorize_layer=vectorise_fn, params=test_params
+            word_embedding.word_embedded_model(
+                input_data=inputs,
+                vectorize_layer=vectorise_fn,
+                model=RNN.RNN,
+                params=test_params,
             )
         elif model_type.endswith("LSTM"):
-            # TODO: models.word_lstm_model()
-            lstm_model.word_lstm_model(
-                input_data=inputs, vectorize_layer=vectorise_fn, params=test_params
+            word_embedding.word_embedded_model(
+                input_data=inputs,
+                vectorize_layer=vectorise_fn,
+                model=LSTM.BaselineLSTM,
+                params=test_params,
             )
-            pass
         else:
             raise NotImplementedError
 
@@ -111,7 +119,20 @@ def model_fn(inputs: dict, params: dict):
 
 # download.download()
 
+test_params["model"] = "MLP"
 tensor_dict = input_fn(
     pos_path=POS_DIR, neg_path=NEG_DIR, bert_path=BERT_DIR, params=test_params
 )
 model_fn(tensor_dict, test_params)
+
+# test_params["model"] = "RNN"
+# tensor_dict = input_fn(
+#     pos_path=POS_DIR, neg_path=NEG_DIR, bert_path=BERT_DIR, params=test_params
+# )
+# model_fn(tensor_dict, test_params)
+
+# test_params["model"] = "LSTM"
+# tensor_dict = input_fn(
+#     pos_path=POS_DIR, neg_path=NEG_DIR, bert_path=BERT_DIR, params=test_params
+# )
+# model_fn(tensor_dict, test_params)

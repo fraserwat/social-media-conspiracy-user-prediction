@@ -1,10 +1,9 @@
 import torch
-from models.RNN import RNN
-from training.pytorch_utils import train_validate, test_model
 from torch.utils.data import DataLoader, TensorDataset
+from training.pytorch_utils import train_validate, test_model
 
 
-def word_rnn_model(input_data, vectorize_layer, params):
+def word_embedded_model(input_data, vectorize_layer, model, params):
     # Combine all datasets into a single generator
     all_texts = (
         text for dataset in ["train", "val", "test"] for text in input_data[dataset][0]
@@ -36,7 +35,7 @@ def word_rnn_model(input_data, vectorize_layer, params):
     test_loader = create_data_loader(input_data["test"], max_length)
 
     # Initialise MLP model
-    model = RNN(input_size=max_length)
+    model = model(input_size=max_length)
 
     # Use Binary Cross Entropy Loss and Adam optimizer
     loss = torch.nn.BCELoss()
