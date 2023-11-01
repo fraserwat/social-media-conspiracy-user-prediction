@@ -47,12 +47,17 @@ class EarlyStopping:
             self.trace_func(
                 f"EarlyStopping counter: {self.counter} out of {self.patience}"
             )
+            # Triggering of Early Stopping process, returning the checkpoint path.
             if self.counter >= self.patience:
                 self.early_stop = True
+                return self.get_checkpoint_path()
+
         else:
             self.best_score = score
             self.save_checkpoint(val_loss, model)
             self.counter = 0
+
+        return None
 
     def save_checkpoint(self, val_loss, model):
         """Saves model when validation loss decreases."""
@@ -62,3 +67,6 @@ class EarlyStopping:
             )
         torch.save(model.state_dict(), self.path)
         self.val_loss_min = val_loss
+
+    def get_checkpoint_path(self):
+        return self.path

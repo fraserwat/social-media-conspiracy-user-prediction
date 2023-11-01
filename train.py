@@ -5,13 +5,12 @@ from embedding import vectorise, trans
 from training import word_embedding
 from models import MLP, RNN, LSTM
 
-# TODO: Maybe use argparse to make this cleaner.
-# TODO: What is the difference between the `logging` library and normal print statements
+# TODO: Use argparse and logging libraries to make output cleaner.
 
 test_params = {
     "sample_rate": 0.15,
     # "embedding": None,
-    "model": "MLP",
+    "model": "LSTM",
     "split": [0.7, 0.15, 0.15],
     "epochs": 100,
     "max_features": 2**16,
@@ -76,10 +75,16 @@ def model_fn(inputs: dict, params: dict):
     if "BERT" in model_type:
         # Sentence BERT embeddings
         if model_type.endswith("MLP"):
+            # TODO: MLP SBERT Embeddings
+            # TODO: MLP SBERT Model
             pass
         elif model_type.endswith("RNN"):
+            # TODO: RNN SBERT Embeddings
+            # TODO: RNN SBERT Model
             pass
         elif model_type.endswith("LSTM"):
+            # TODO: LSTM SBERT Embeddings
+            # TODO: LSTM SBERT Model
             pass
         else:
             raise NotImplementedError
@@ -133,6 +138,7 @@ param_combinations = list(itertools.product(*grid_search.values()))
 param_result_list = []
 
 for idx, combi in enumerate(param_combinations):
+    print(f"Run {idx + 1} of {len(param_combinations)}")
     combi_dict = dict(zip(param_names, combi))
     # Updating the input parameters with those of the current grid search
     test_params.update(combi_dict)
@@ -154,8 +160,11 @@ for idx, combi in enumerate(param_combinations):
     param_result_list.append((combi_dict, results))
 
 # TODO: End of grid search should output best config.
+# TODO: Implement 5-fold Cross-Validation
 # Print out param results for grid search
 print("\n" * 5)
 for combi, results in param_result_list:
     print(combi)
     print(results)
+
+# Best MLP Results:

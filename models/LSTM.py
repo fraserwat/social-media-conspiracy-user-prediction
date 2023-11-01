@@ -17,16 +17,19 @@ class BaselineLSTM(nn.Module):
         super(BaselineLSTM, self).__init__()
         self.lstm1 = nn.LSTM(input_size, hidden_dim, batch_first=True)
         self.lstm2 = nn.LSTM(hidden_dim, hidden_dim, batch_first=True)
+        self.lstm_batchnorm = nn.BatchNorm1d(hidden_dim)
         self.linear = nn.Linear(hidden_dim, output_dim)
         self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(dropout_rate)
 
     def forward(self, x):
         out, _ = self.lstm1(x)
+        out = self.lstm_batchnorm(out)
         out = self.dropout(out)
         out, _ = self.lstm2(out)
         # TODO: Logic to put this back in (& replace next line) if nth_dimension > 2
         # out = self.linear(out[:, -1, :])  # Many-to-One, taking the last output
+        out = self.lstm_batchnorm(out)
         out = self.dropout(out)
         out = self.linear(out)
         out = self.sigmoid(out)

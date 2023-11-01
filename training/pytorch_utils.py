@@ -17,8 +17,9 @@ def train_validate(
     optimizer,
     n_epochs=30,
 ):
-    # Initialise Early Stopping
+    # Initialize Early Stopping
     early_stopping = EarlyStopping(patience=5, verbose=True)
+    checkpoint_path = None
 
     for epoch in range(n_epochs):
         # Training Phase
@@ -54,13 +55,17 @@ def train_validate(
         print(f"Epoch [{epoch+1}/{n_epochs}], Train Loss: {tl}, Valid Loss: {vl}")
 
         # Early Stopping
-        early_stopping(validation_loss, model)
+        checkpoint_path = early_stopping(validation_loss, model)
         if early_stopping.early_stop:
             print("Early stopping")
             break
+    return checkpoint_path
 
 
-def test_model(model, testing_data_loader, loss_function):
+def test_model(model, testing_data_loader, loss_function, checkpoint_path=None):
+    if checkpoint_path is not None:
+        print(f"Loading checkpoint from {checkpoint_path}...")
+        model.load_state_dict(torch.load(checkpoint_path))
     model.eval()
     test_loss = 0.0
     test_accuracy = 0.0
