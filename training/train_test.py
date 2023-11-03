@@ -18,7 +18,7 @@ def train_validate(
     n_epochs=30,
 ):
     # Initialize Early Stopping
-    early_stopping = EarlyStopping(patience=5, verbose=True)
+    early_stopping = EarlyStopping(patience=5, verbose=False)
     checkpoint_path = None
 
     for epoch in range(n_epochs):
@@ -40,7 +40,7 @@ def train_validate(
         model.eval()
         validation_loss = 0.0
 
-        print("validation process beginning...")
+        # print("validation process beginning...")
 
         with torch.no_grad():
             for batch_inputs, batch_targets in validation_loader:
@@ -95,8 +95,7 @@ def test_model(model, testing_data_loader, loss_function, checkpoint_path=None):
     final_accuracy = test_accuracy / len(testing_data_loader) * 100
 
     # print(f"Test Loss: {final_loss:.4f}")
-    # print(f"Test Accuracy: {final_accuracy:.2f}%")
-    # print(f"Test Recall: {test_recall:.2f}")
+    print(f"Test Accuracy: {final_accuracy:.2f}")
     print(f"Test F1 Score: {test_f1:.2f}")
 
     return final_loss, final_accuracy, test_recall, test_f1

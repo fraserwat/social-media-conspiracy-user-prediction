@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import DataLoader, TensorDataset
-from training.pytorch_utils import train_validate, test_model
+from training.train_test import train_validate, test_model
 
 
 def word_embedded_model(input_data, vectorize_layer, model, params):
