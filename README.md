@@ -11,3 +11,16 @@ This project replicates the findings in a paper predicting a user's participatio
 **Paper GitHub Repo:** https://github.com/isvezich/cs230-political-extremism
 
 TODO: Note that when you use padded sequences with LSTM or other RNN layers, you might also want to use packing to make the computation more efficient and accurate, but that's an advanced topic.
+
+### Grid Search Results Word Embedding
+
+```
+BEST MLP:
+({'l2_penalty_weight': 0.1, 'learning_rate': 0.0001, 'batch_size': 32, 'dropout_rate': 0.1}, {'loss': 0.6109374715731695, 'accuracy': 66.92485755834824, 'recall': 0.578125, 'f1': 0.6348811619033905})
+
+BEST RNN:
+({'l2_penalty_weight': 0.1, 'learning_rate': 0.0001, 'batch_size': 32, 'dropout_rate': 0.1}, {'loss': 0.6167022647001804, 'accuracy': 65.00178063527132, 'recall': 0.5764119601328903, 'f1': 0.6107605312330808})
+
+BEST LSTM:
+({'l2_penalty_weight': 0.01, 'learning_rate': 0.001, 'batch_size': 16, 'dropout_rate': 0.25}, {'loss': 0.6471295786368383, 'accuracy': 61.85966811396859, 'recall': 0.3864353312302839, 'f1': 0.5268825858642403})
+```

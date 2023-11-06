@@ -27,7 +27,7 @@ class BaselineLSTM(nn.Module):
         out = self.lstm_batchnorm(out)
         out = self.dropout(out)
         out, _ = self.lstm2(out)
-        # TODO: Logic to put this back in (& replace next line) if nth_dimension > 2
+        # Logic to put this back in (& replace next line) for model where nth_dimension > 2
         # out = self.linear(out[:, -1, :])  # Many-to-One, taking the last output
         out = self.lstm_batchnorm(out)
         out = self.dropout(out)

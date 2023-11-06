@@ -1,14 +1,18 @@
 def convert_bert_rnn_mlp_to_tensor(df, params):
     authors = []
-    for i, sentences in enumerate(df["text"]):
-        # Truncate sentences to param length
-        truncated_sentences = sentences[: params.get("sentences_length", 150)]
+    max_length = params.get("sentences_length", 150)
 
-        # Convert to lowercase and filter out non-string types if needed
-        lower_cased_sentences = [
-            w.lower() for w in truncated_sentences if isinstance(w, str)
+    # for i, sentences in enumerate(df["text"]):
+    for author_posts in df["text"]:
+        # Truncate each post individually to max_length words and filter out non-string types
+        sentences = [post for post in author_posts if isinstance(post, str)]
+        truncated_sentences = [
+            " ".join([w.lower() for w in post.split()[:max_length]])
+            for post in sentences
         ]
-        authors.append(lower_cased_sentences)
+
+        # Original uses ragged tensors. No equivalent exists in PyTorch, so will pad later.
+        authors.append(truncated_sentences)
 
     # In PyTorch, can just leave sequences as lists and use directly in data loaders
     return authors

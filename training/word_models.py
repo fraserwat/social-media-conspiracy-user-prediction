@@ -5,7 +5,6 @@ from training.train_test import train_validate, test_model
 
 def word_embedded_model(input_data, vectorize_layer, model, params):
     # Combine all datasets into a single generator
-    # TODO: Check same process used in paper. Getting really volitile results from word LSTM
     all_texts = (
         text for dataset in ["train", "val", "test"] for text in input_data[dataset][0]
     )
@@ -37,7 +36,7 @@ def word_embedded_model(input_data, vectorize_layer, model, params):
     val_loader = create_data_loader(input_data["val"], max_length)
     test_loader = create_data_loader(input_data["test"], max_length)
 
-    # Initialise MLP model
+    # Initialise model
     model = model(input_size=max_length, dropout_rate=params.get("dropout_rate", 0.0))
 
     # Use Binary Cross Entropy Loss and Adam optimizer

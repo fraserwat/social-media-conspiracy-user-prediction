@@ -1,5 +1,5 @@
 from models import MLP, RNN, LSTM
-from training import word_embedding
+from training import word_models, sentence_models
 from embedding import vectorise
 
 
@@ -8,19 +8,25 @@ def model_fn(inputs: dict, params: dict):
     max_features = params.get("max_features", 10**4)
 
     if "BERT" in model_type:
-        # Sentence BERT embeddings
+        bert_model = params.get(
+            "transformer_model", "sentence-transformers/all-MiniLM-L6-v2"
+        )
         if model_type.endswith("MLP"):
-            # TODO: MLP SBERT Embeddings
             # TODO: MLP SBERT Model
-            pass
+            results = sentence_models.sentence_embedded_model(
+                input_data=inputs,
+                transformer_model=bert_model,
+                model=MLP.MLP,
+                params=params,
+            )
         elif model_type.endswith("RNN"):
             # TODO: RNN SBERT Embeddings
             # TODO: RNN SBERT Model
-            pass
+            raise NotImplementedError
         elif model_type.endswith("LSTM"):
             # TODO: LSTM SBERT Embeddings
             # TODO: LSTM SBERT Model
-            pass
+            raise NotImplementedError
         else:
             raise NotImplementedError
     else:
@@ -32,27 +38,24 @@ def model_fn(inputs: dict, params: dict):
         )
 
         if model_type.endswith("MLP"):
-            results = word_embedding.word_embedded_model(
+            results = word_models.word_embedded_model(
                 input_data=inputs,
                 vectorize_layer=vectorise_fn,
                 model=MLP.MLP,
-                # params=test_params,
                 params=params,
             )
         elif model_type.endswith("RNN"):
-            results = word_embedding.word_embedded_model(
+            results = word_models.word_embedded_model(
                 input_data=inputs,
                 vectorize_layer=vectorise_fn,
                 model=RNN.RNN,
-                # params=test_params,
                 params=params,
             )
         elif model_type.endswith("LSTM"):
-            results = word_embedding.word_embedded_model(
+            results = word_models.word_embedded_model(
                 input_data=inputs,
                 vectorize_layer=vectorise_fn,
                 model=LSTM.BaselineLSTM,
-                # params=test_params,
                 params=params,
             )
         else:

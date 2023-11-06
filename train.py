@@ -3,12 +3,13 @@ from training import grid_search
 # TODO: Use argparse and logging libraries to make output cleaner.
 
 test_params = {
-    "sample_rate": 0.25,
-    # "embedding": None,
-    "model": "MLP",
+    "sample_rate": 0.1,
+    "model": "BERT_MLP",
     "split": [0.7, 0.15, 0.15],
     "epochs": 100,
     "max_features": 2**16,
+    "sentences_length": 25,
+    "transformer_model": "sentence-transformers/all-MiniLM-L6-v2",
 }
 
 
@@ -26,15 +27,11 @@ grid_search_params = {
     "dropout_rate": [0.1, 0.25],
 }
 
-test_params["model"] = "LSTM"
-best_LSTM = grid_search.perform(
+best_bert_mlp = grid_search.perform(
     static_params=test_params,
     grid_search_params=grid_search_params,
     pos_path=POS_DIR,
     neg_path=NEG_DIR,
     bert_path=BERT_DIR,
 )
-
-# print(f"\n\n\n\nBEST MLP:\n{best_MLP}\n")
-# print(f"BEST RNN:\n{best_RNN}\n")
-print(f"BEST LSTM:\n{best_LSTM}\n")
+print(f"\n\n\n\n\nBEST BERT MLP:\n{best_bert_mlp}\n")

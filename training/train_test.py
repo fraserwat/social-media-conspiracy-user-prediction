@@ -25,8 +25,10 @@ def train_validate(
         # Training Phase
         model.train()
         training_loss = 0.0
+        batch = 1
 
         for batch_inputs, batch_targets in training_loader:
+            print(f"Batch {batch} of {len(training_loader)}")
             preds = model(batch_inputs)
             loss = loss_function(preds.squeeze(), batch_targets)
 
@@ -35,6 +37,7 @@ def train_validate(
             optimizer.step()
 
             training_loss += loss.item()
+            batch += 1
 
         # Validation Phase
         model.eval()

@@ -68,7 +68,7 @@ def perform(static_params, grid_search_params, pos_path, neg_path, bert_path, cv
 
         # Average F1 score across folds
         avg_f1_score = np.mean(f1_scores)
-        print(f"Average F1 score: {avg_f1_score.round(4)}")
+        print(f"Average F1 score: {avg_f1_score.round(4)}\n")
 
         if avg_f1_score > best_f1_score:
             best_f1_score = avg_f1_score
