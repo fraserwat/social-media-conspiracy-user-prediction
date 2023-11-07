@@ -1,18 +1,16 @@
+import argparse
 from models import MLP, RNN, LSTM
 from training import word_models, sentence_models
 from embedding import vectorise
 
 
-def model_fn(inputs: dict, params: dict):
-    model_type = params.get("model", "").upper()
-    max_features = params.get("max_features", 10**4)
+def model_fn(inputs: dict, params: argparse.Namespace):
+    model_type = params.model.upper()
+    max_features = params.max_features
 
     if "BERT" in model_type:
-        bert_model = params.get(
-            "transformer_model", "sentence-transformers/all-MiniLM-L6-v2"
-        )
+        bert_model = params.transformer_model
         if model_type.endswith("MLP"):
-            # TODO: MLP SBERT Model
             results = sentence_models.sentence_embedded_model(
                 input_data=inputs,
                 transformer_model=bert_model,
@@ -20,9 +18,12 @@ def model_fn(inputs: dict, params: dict):
                 params=params,
             )
         elif model_type.endswith("RNN"):
-            # TODO: RNN SBERT Embeddings
-            # TODO: RNN SBERT Model
-            raise NotImplementedError
+            results = sentence_models.sentence_embedded_model(
+                input_data=inputs,
+                transformer_model=bert_model,
+                model=RNN.RNN,
+                params=params,
+            )
         elif model_type.endswith("LSTM"):
             # TODO: LSTM SBERT Embeddings
             # TODO: LSTM SBERT Model

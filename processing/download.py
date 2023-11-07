@@ -1,4 +1,5 @@
 import os
+import logging
 from typing import List
 import requests
 
@@ -22,7 +23,7 @@ def download(output_dir="data") -> List[str]:
     filepaths = []
 
     for url in download_urls:
-        print(f"Downloading from {url}...")
+        logging.debug("Downloading from %s...", url)
         # Define file names based on the URL
         file_name = os.path.join(output_dir, url.split("/")[-1])
 
@@ -32,8 +33,7 @@ def download(output_dir="data") -> List[str]:
             for chunk in response.iter_content(chunk_size=8192):
                 if chunk:  # filter out keep-alive new chunks
                     gz_file.write(chunk)
-        print(f"... Finished downloading from {url}!")
-
+        logging.debug("Finished downloading from %s.", url)
         filepaths.append(file_name)
 
     return filepaths

@@ -1,4 +1,5 @@
 import torch
+import logging
 from sklearn.metrics import recall_score, f1_score
 from training.early_stopping import EarlyStopping
 
@@ -28,7 +29,7 @@ def train_validate(
         batch = 1
 
         for batch_inputs, batch_targets in training_loader:
-            print(f"Batch {batch} of {len(training_loader)}")
+            logging.debug("Batch %s of %s", batch, len(training_loader))
             preds = model(batch_inputs)
             loss = loss_function(preds.squeeze(), batch_targets)
 
@@ -43,8 +44,6 @@ def train_validate(
         model.eval()
         validation_loss = 0.0
 
-        # print("validation process beginning...")
-
         with torch.no_grad():
             for batch_inputs, batch_targets in validation_loader:
                 preds = model(batch_inputs)
@@ -55,19 +54,21 @@ def train_validate(
         tl, vl = round(training_loss / len(training_loader), 4), round(
             validation_loss / len(validation_loader), 4
         )
-        print(f"Epoch [{epoch+1}/{n_epochs}], Train Loss: {tl}, Valid Loss: {vl}")
+        logging.info(
+            "Epoch %s, Train Loss: %s, Valid Loss: %s", (epoch + 1) / n_epochs, tl, vl
+        )
 
         # Early Stopping
         checkpoint_path = early_stopping(validation_loss, model)
         if early_stopping.early_stop:
-            print("Early stopping")
+            logging.info("Early stopping")
             break
     return checkpoint_path
 
 
 def test_model(model, testing_data_loader, loss_function, checkpoint_path=None):
     if checkpoint_path is not None:
-        print(f"Loading checkpoint from {checkpoint_path}...")
+        logging.debug("Loading checkpoint from %s...", checkpoint_path)
         model.load_state_dict(torch.load(checkpoint_path))
     model.eval()
     test_loss = 0.0
@@ -97,8 +98,7 @@ def test_model(model, testing_data_loader, loss_function, checkpoint_path=None):
     final_loss = test_loss / len(testing_data_loader)
     final_accuracy = test_accuracy / len(testing_data_loader) * 100
 
-    # print(f"Test Loss: {final_loss:.4f}")
-    print(f"Test Accuracy: {final_accuracy:.2f}")
-    print(f"Test F1 Score: {test_f1:.2f}")
+    logging.critical("Test Accuracy: %s", round(final_accuracy, 2))
+    logging.critical("Test F1 Score: %s", round(float(test_f1), 2))
 
     return final_loss, final_accuracy, test_recall, test_f1

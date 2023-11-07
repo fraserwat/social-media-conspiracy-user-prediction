@@ -1,3 +1,4 @@
+import logging
 import itertools
 import numpy as np
 from sklearn.model_selection import KFold
@@ -34,18 +35,20 @@ def perform(static_params, grid_search_params, pos_path, neg_path, bert_path, cv
     words, labels = data_dict["train"]
 
     for idx, combi in enumerate(param_combinations):
-        print(f"Grid search iteration {idx+1} of {len(param_combinations)}...")
+        logging.critical(
+            "Grid search iteration %s of %s.", idx + 1, len(param_combinations)
+        )
         # Updating the non-grid params with those of the current grid search
         combi_dict = dict(zip(param_names, combi))
-        current_params = static_params.copy()
-        current_params.update(combi_dict)
+        for key, value in combi_dict.items():
+            setattr(static_params, key, value)
 
         # cv scores, for each fold - later this will be averaged
         f1_scores = []
         k_num = 1
 
         for train_index, val_index in kfold.split(words):
-            print(f"K-fold {k_num} of {cv}...")
+            logging.critical("K-fold %s of %s...", k_num, cv)
             # Split data into k-folds for training and validation
             words_train, words_val = [words[i] for i in train_index], [
                 words[i] for i in val_index
@@ -61,14 +64,14 @@ def perform(static_params, grid_search_params, pos_path, neg_path, bert_path, cv
 
             # Train and evaluate the model
             loss, accuracy, recall, f1 = model_init.model_fn(
-                current_inputs, current_params
+                current_inputs, static_params
             )
             f1_scores.append(f1)
             k_num += 1
 
         # Average F1 score across folds
         avg_f1_score = np.mean(f1_scores)
-        print(f"Average F1 score: {avg_f1_score.round(4)}\n")
+        logging.critical("Average F1 score: %s.", avg_f1_score.round(4))
 
         if avg_f1_score > best_f1_score:
             best_f1_score = avg_f1_score

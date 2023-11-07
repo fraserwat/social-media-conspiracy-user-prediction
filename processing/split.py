@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 
-def train_val_test_split(df: pd.DataFrame, params: dict, use_val: bool = False) -> List:
+def train_val_test_split(df, params, use_val: bool = False) -> List:
     """
     Split the dataframe into train, (optional validation), and test sets.
 
@@ -12,7 +12,7 @@ def train_val_test_split(df: pd.DataFrame, params: dict, use_val: bool = False) 
     :param use_val: Flag to determine if a validation set should be created.
     :return: A list of DataFrames containing the train, (validation), and test sets.
     """
-    ratio = params.get("split", [0.7, 0.15, 0.15])
+    ratio = params.split
     df_shuffled = df.sample(frac=1, random_state=42).reset_index(drop=True)
 
     if use_val:

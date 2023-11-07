@@ -12,7 +12,7 @@ def word_embedded_model(input_data, vectorize_layer, model, params):
     # Calculate the max length considering the upper limit
     max_length = min(
         max(len(vectorize_layer(text)) for text in all_texts),
-        params.get("max_features", float("inf")),
+        params.max_features,
     )
 
     def create_data_loader(data, sequence_length):
@@ -26,9 +26,7 @@ def word_embedded_model(input_data, vectorize_layer, model, params):
             )
 
         dataset = TensorDataset(data_padded, data[1].clone().detach())
-        loader = DataLoader(
-            dataset, batch_size=params.get("batch_size", 32), shuffle=True
-        )
+        loader = DataLoader(dataset, batch_size=params.batch_size, shuffle=True)
 
         return loader
 
@@ -37,18 +35,20 @@ def word_embedded_model(input_data, vectorize_layer, model, params):
     test_loader = create_data_loader(input_data["test"], max_length)
 
     # Initialise model
-    model = model(input_size=max_length, dropout_rate=params.get("dropout_rate", 0.0))
+    model = model(input_size=max_length, dropout_rate=params.dropout_rate)
 
     # Use Binary Cross Entropy Loss and Adam optimizer
     loss = torch.nn.BCELoss()
     adam = torch.optim.Adam(
         model.parameters(),
-        weight_decay=params.get("l2_penalty_weight", 0),
-        lr=params.get("learning_rate", 0.001),
+        weight_decay=params.l2_penalty_weight,
+        lr=params.learning_rate,
     )
 
     # Train and validate the model
-    checkpoint_path = train_validate(model, train_loader, val_loader, loss, adam)
+    checkpoint_path = train_validate(
+        model, train_loader, val_loader, loss, adam, n_epochs=params.epochs
+    )
 
     # Test the model
     loss, accuracy, recall, f1 = test_model(

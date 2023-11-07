@@ -45,8 +45,3 @@ class SentenceTransformer(torch.nn.Module):
         # Commonly used in NLP tasks to generate fixed-len sentence embeddings from transformers
         # outputs. Allows model to handle diff sequence lens + calculate sentence representations.
         return sum_embeddings / sum_mask
-
-
-if __name__ == "__main__":
-    model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    print(model(["Your sentence here."]))

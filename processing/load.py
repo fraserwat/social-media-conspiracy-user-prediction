@@ -1,3 +1,4 @@
+import logging
 import pandas as pd
 
 
@@ -33,17 +34,17 @@ def load_bert_data_to_df(path, params):
     df = pd.read_csv(path, compression="gzip")
 
     # Extra sequencing required if LSTM
-    if params.get("model", "BERT_MLP") == "BERT_LSTM":
-        print("BERT_LSTM: Grouping by post_id")
+    if params.model == "BERT_LSTM":
+        logging.debug("BERT_LSTM: Grouping by post_id")
         df = df.groupby("post_id").agg(
             {"text": list, "author": "first", "q_level": "first"}
         )
         df = df.groupby("author").agg({"text": list, "q_level": "first"})
-        df = df.sample(frac=params.get("sample_rate", "1.0")).reset_index()
+        df = df.sample(frac=params.sample_rate).reset_index()
     else:
         df = df.groupby("author").agg({"text": list, "q_level": "first"})
-        df = df.sample(frac=params.get("sample_rate", "1.0")).reset_index()
-    print(f"length of features: {len(df)}")
+        df = df.sample(frac=params.sample_rate).reset_index()
+    logging.debug("Length of features: %s", len(df))
 
     return df
 
@@ -53,7 +54,7 @@ def load_all_data_task_specific(pos_path, neg_path, params):
     pos = load_reddit_df(pos_path)
     neg = load_reddit_df(neg_path)
     features = pd.concat([pos, neg], axis=0)
-    features = features.sample(frac=params["sample_rate"]).reset_index()
-    print(f"length of features: {len(features)}")
+    features = features.sample(frac=params.sample_rate).reset_index()
+    logging.debug("length of features: %s.", len(features))
 
     return features

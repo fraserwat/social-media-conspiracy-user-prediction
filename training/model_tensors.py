@@ -1,25 +1,26 @@
+import logging
 import torch
 from processing import load, split, tensor
 
 
 def input_fn(pos_path, neg_path, bert_path, params):
     # source data provided is different for bert / non-bert
-    print("Loading QAnon dataset and creating df...")
-    if params.get("model", "task_specific").lower().startswith("bert"):
-        print("Making bert dataset")
+    logging.debug("Loading QAnon dataset and creating df...")
+    if params.model.lower().startswith("bert"):
+        logging.debug("Making bert dataset")
         df = load.load_bert_data_to_df(bert_path, params)
     else:
-        print("Making word embedding dataset")
+        logging.debug("Making word embedding dataset")
         df = load.load_all_data_task_specific(pos_path, neg_path, params)
 
     train, test = split.train_val_test_split(df, params=params)
 
-    if params.get("model", "MLP").upper() == "BERT_LSTM":
+    if params.model.upper() == "BERT_LSTM":
         # Actual BERT embeddings not done at this stage!! Purely data prep + tensor construction.
         # TODO: Add BERT embeddings for LSTM.
         words_train = tensor.convert_bert_lstm_to_tensor(train, params)
         words_test = tensor.convert_bert_lstm_to_tensor(test, params)
-    elif params.get("model", "MLP").upper() in ["BERT_RNN", "BERT_MLP"]:
+    elif params.model.upper() in ["BERT_RNN", "BERT_MLP"]:
         words_train = tensor.convert_bert_rnn_mlp_to_tensor(train, params)
         words_test = tensor.convert_bert_rnn_mlp_to_tensor(test, params)
     else:
@@ -35,6 +36,6 @@ def input_fn(pos_path, neg_path, bert_path, params):
         "test": [words_test, labels_test],
     }
 
-    print("Done data processing")
+    logging.debug("Done data processing")
 
     return inputs

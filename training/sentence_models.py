@@ -24,27 +24,26 @@ def sentence_embedded_model(input_data, transformer_model, model, params):
     test_texts, test_labels = input_data["test"]
 
     # Create DataLoaders for train, validation, and test sets
-    batch_size = params.get("batch_size", 32)
+    batch_size = params.batch_size
     train_loader = create_data_loader(train_texts, train_labels, batch_size)
     val_loader = create_data_loader(val_texts, val_labels, batch_size)
     test_loader = create_data_loader(test_texts, test_labels, batch_size)
 
     # Initialise model
-    model = model(
-        bert_model_path=transformer_model,
-        dropout_rate=params.get("dropout_rate", 0.0),
-    )
+    model = model(bert_model_path=transformer_model, dropout_rate=params.dropout_rate)
 
     # Use Binary Cross Entropy Loss and Adam optimizer
     loss = torch.nn.BCELoss()
     adam = torch.optim.Adam(
         model.parameters(),
-        weight_decay=params.get("l2_penalty_weight", 0),
-        lr=params.get("learning_rate", 0.001),
+        weight_decay=params.l2_penalty_weight,
+        lr=params.learning_rate,
     )
 
     # Train and validate the model
-    checkpoint_path = train_validate(model, train_loader, val_loader, loss, adam)
+    checkpoint_path = train_validate(
+        model, train_loader, val_loader, loss, adam, n_epochs=params.epochs
+    )
 
     # Test the model
     loss, accuracy, recall, f1 = test_model(

@@ -1,6 +1,6 @@
 def convert_bert_rnn_mlp_to_tensor(df, params):
     authors = []
-    max_length = params.get("sentences_length", 150)
+    max_length = params.sentences_length
 
     # for i, sentences in enumerate(df["text"]):
     for author_posts in df["text"]:
@@ -26,9 +26,9 @@ def convert_bert_lstm_to_tensor(df, params):
         posts = []
         # 2. Within each author, posts are iterated over, truncated and cleaned.
         for jdx, post in enumerate(au):
-            if jdx < params.get("posts_length", 50):
+            if jdx < params.posts_length:
                 # Truncate the post sentences to the specified length
-                truncated_post = post[: params.get("sentences_length", 150)]
+                truncated_post = post[: params.sentences_length]
 
                 # Convert to lowercase and filter out non-string types if needed
                 lower_cased_post = [
