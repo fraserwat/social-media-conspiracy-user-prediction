@@ -2,7 +2,6 @@ def convert_bert_rnn_mlp_to_tensor(df, params):
     authors = []
     max_length = params.sentences_length
 
-    # for i, sentences in enumerate(df["text"]):
     for author_posts in df["text"]:
         # Truncate each post individually to max_length words and filter out non-string types
         sentences = [post for post in author_posts if isinstance(post, str)]
@@ -19,26 +18,25 @@ def convert_bert_rnn_mlp_to_tensor(df, params):
 
 
 def convert_bert_lstm_to_tensor(df, params):
-    authors = []
+    authors_data = []
+    max_posts = params.posts_length
+    max_length = params.sentences_length
 
-    # 1. Iterates over each author's text items.
-    for idx, au in enumerate(df["text"]):
-        posts = []
-        # 2. Within each author, posts are iterated over, truncated and cleaned.
-        for jdx, post in enumerate(au):
-            if jdx < params.posts_length:
-                # Truncate the post sentences to the specified length
-                truncated_post = post[: params.sentences_length]
+    # Iterate over each author's list of posts
+    for _, author_posts in df["text"].items():
+        # Process each post, which is a list of comments
+        processed_posts = []
+        for post_comments in author_posts[:max_posts]:
+            # Concatenate all comments in a post into a single string, truncate, and lowercase
+            filtered_comments = [
+                str(comment) for comment in post_comments if isinstance(comment, str)
+            ]
+            concatenated_comments = " ".join(filtered_comments).lower()
+            truncated_comments = " ".join(concatenated_comments.split()[:max_length])
+            processed_posts.append(truncated_comments)
 
-                # Convert to lowercase and filter out non-string types if needed
-                lower_cased_post = [
-                    w.lower() for w in truncated_post if isinstance(w, str)
-                ]
-                # 3. Each cleaned, truncated post is then appended to a list for that author.
-                posts.append(lower_cased_post)
+        # Add the processed posts for this author to the main list
+        authors_data.append(processed_posts)
 
-        # 4. Finally, all of the authors' posts are appended to an overall list.
-        authors.append(posts)
-
-    # In PyTorch, you can often leave the sequences as lists and use those directly in data loaders
-    return authors
+    # Return the structured data for use with a DataLoader
+    return authors_data

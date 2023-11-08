@@ -16,8 +16,6 @@ def input_fn(pos_path, neg_path, bert_path, params):
     train, test = split.train_val_test_split(df, params=params)
 
     if params.model.upper() == "BERT_LSTM":
-        # Actual BERT embeddings not done at this stage!! Purely data prep + tensor construction.
-        # TODO: Add BERT embeddings for LSTM.
         words_train = tensor.convert_bert_lstm_to_tensor(train, params)
         words_test = tensor.convert_bert_lstm_to_tensor(test, params)
     elif params.model.upper() in ["BERT_RNN", "BERT_MLP"]:

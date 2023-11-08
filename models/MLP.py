@@ -9,7 +9,7 @@ to convert our predictions to probability space
 """
 
 import torch
-from sentence_transformers import SentenceTransformer
+from embedding.sentence_transformer import SentenceTransformer
 
 
 class MLP(torch.nn.Module):

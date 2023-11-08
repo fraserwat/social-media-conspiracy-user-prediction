@@ -13,6 +13,7 @@ def add_positional_arguments(
         "model",
         metavar="Model",
         type=str,
+        choices=["MLP", "RNN", "LSTM", "BERT_MLP", "BERT_RNN", "BERT_LSTM"],
         help="Model to train. Options: MLP, RNN, LSTM, BERT_MLP, BERT_RNN, BERT_LSTM.",
     )
     # Add split variable, as I don't want to change this.
@@ -26,7 +27,7 @@ def add_optional_arguments(
 ) -> argparse.ArgumentParser:
     parser.add_argument(
         "--sample_rate",
-        metavar="Sample Rate",
+        metavar="Data sampled in model.",
         type=float,
         help="% of dataset sampled in model.",
         nargs="?",  # optional argument (0 or 1 args)
@@ -42,7 +43,7 @@ def add_optional_arguments(
     )
     parser.add_argument(
         "--max_features",
-        metavar="Max Features",
+        metavar="Word Embedding Max Features",
         type=int,
         help="Number of features to use in vectorisation for the word embedding models.",
         nargs="?",
@@ -58,7 +59,7 @@ def add_optional_arguments(
     )
     parser.add_argument(
         "--sentences_length",
-        metavar="Sentence Length",
+        metavar="Max sentence length",
         type=int,
         help="Length of sentences to use in vectorisation for the sentence embedding models.",
         nargs="?",

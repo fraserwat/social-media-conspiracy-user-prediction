@@ -55,7 +55,11 @@ def train_validate(
             validation_loss / len(validation_loader), 4
         )
         logging.info(
-            "Epoch %s, Train Loss: %s, Valid Loss: %s", (epoch + 1) / n_epochs, tl, vl
+            "Epoch %s / %s, Train Loss: %s, Val Loss: %s",
+            epoch + 1,
+            n_epochs,
+            tl,
+            vl,
         )
 
         # Early Stopping

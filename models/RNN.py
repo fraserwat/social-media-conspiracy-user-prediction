@@ -7,7 +7,7 @@ optimizer settings, and regularization strategies.
 """
 
 import torch
-from sentence_transformers import SentenceTransformer
+from embedding.sentence_transformer import SentenceTransformer
 from torch.nn.utils.rnn import pad_sequence
 
 

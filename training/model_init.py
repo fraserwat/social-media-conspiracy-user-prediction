@@ -25,9 +25,13 @@ def model_fn(inputs: dict, params: argparse.Namespace):
                 params=params,
             )
         elif model_type.endswith("LSTM"):
-            # TODO: LSTM SBERT Embeddings
-            # TODO: LSTM SBERT Model
-            raise NotImplementedError
+            # TODO: LSTM SBERT Embeddings Model
+            results = sentence_models.sentence_embedded_model(
+                input_data=inputs,
+                transformer_model=bert_model,
+                model=LSTM.LSTM,
+                params=params,
+            )
         else:
             raise NotImplementedError
     else:

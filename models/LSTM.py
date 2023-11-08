@@ -10,6 +10,7 @@ strategies as the baseline models.
 """
 
 import torch.nn as nn
+from embedding.sentence_transformer import SentenceTransformer
 
 
 class BaselineLSTM(nn.Module):
