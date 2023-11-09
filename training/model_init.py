@@ -9,9 +9,7 @@ def model_fn(inputs: dict, params: argparse.Namespace):
     max_features = params.max_features
 
     if "BERT" in model_type:
-        # bert_model = params.transformer_model
-        bert_model = "sentence-transformers/all-MiniLM-L6-v2"
-        print(bert_model)
+        bert_model = params.transformer_model
         if model_type.endswith("MLP"):
             results = sentence_models.sentence_embedded_model(
                 input_data=inputs,

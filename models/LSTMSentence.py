@@ -11,7 +11,7 @@ strategies as the baseline models.
 
 import torch
 from sentence_transformers import SentenceTransformer
-from torch.nn.utils.rnn import pad_sequence
+import torch.nn.utils.rnn as rnn_utils
 import torch.nn.functional as F
 
 
@@ -47,32 +47,48 @@ class SentenceLSTM(torch.nn.Module):
 
     def forward(self, authors):
         authors_embeddings = []
+        authors_lengths = []
 
         # Process each author's posts
         for author_posts in authors:
-            posts_embeddings = self.sentence_transformer.encode(
+            post_embeddings = self.sentence_transformer.encode(
                 author_posts, convert_to_tensor=True, show_progress_bar=False
             )
+            # Now posts_embeddings is a 2D tensor of shape [num_posts, embedding_dim]
+            authors_embeddings.append(post_embeddings)
+            # Each author has a different number of posts, so we keep lengths of each post
+            authors_lengths.append(post_embeddings.shape[0])
 
-            # Pass each post through the first LSTM
-            lstm_posts_output, _ = self.lstm_posts(posts_embeddings)
+        # Pad sequences so each author has the same number of posts (some are padded with 0s)
+        authors_padded = rnn_utils.pad_sequence(authors_embeddings, batch_first=True)
 
-            # Collect the last output for each post sequence
+        # Convert list of lengths to a tensor
+        lengths_tensor = torch.tensor(
+            authors_lengths, dtype=torch.int64, device=authors_padded.device
+        )
 
-            print(self.lstm_posts(posts_embeddings))
-            print(len(self.lstm_posts(posts_embeddings)))
+        # Pack the padded sequences into a PackedSequence object
+        packed_input = rnn_utils.pack_padded_sequence(
+            authors_padded, lengths_tensor, batch_first=True, enforce_sorted=False
+        )
 
-            last_posts_output = lstm_posts_output[:, -1, :]
-            authors_embeddings.append(last_posts_output)
+        # Pass the packed sequence through the first LSTM layer
+        lstm_posts_output, (hidden_state, cell_state) = self.lstm_posts(packed_input)
 
-        # Pad the sequences to have the same length
-        authors_padded = pad_sequence(authors_embeddings, batch_first=True)
+        # In a many-to-one approach, we're only interested in the last output of LSTM sequence.
+        # We can use the lengths_tensor to select the last output for each sequence.
+        lstm_posts_output_unpacked, _ = rnn_utils.pad_packed_sequence(
+            lstm_posts_output, batch_first=True
+        )
+        last_outputs = lstm_posts_output_unpacked[
+            torch.arange(lstm_posts_output_unpacked.size(0)), lengths_tensor - 1
+        ]
 
-        # Process the author sequences through the second LSTM
-        lstm_authors_output, _ = self.lstm_authors(authors_padded)
+        # Pass author sequences through the second LSTM layer
+        lstm_authors_output, _ = self.lstm_authors(last_outputs)
 
-        # Use the output of the last timestep
-        final_output = lstm_authors_output[:, -1, :]
+        # Take output from the last LSTM layer for prediction, removing sequence length dimension
+        final_output = lstm_authors_output.squeeze(1)
 
         # Apply dropout and pass through the linear layer with sigmoid activation
         final_output = F.dropout(
