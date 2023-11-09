@@ -10,8 +10,6 @@ This project replicates the findings in a paper predicting a user's participatio
 
 **Paper GitHub Repo:** https://github.com/isvezich/cs230-political-extremism
 
-TODO: Note that when you use padded sequences with LSTM or other RNN layers, you might also want to use packing to make the computation more efficient and accurate, but that's an advanced topic.
-
 ### Grid Search Results Word Embedding
 
 ```

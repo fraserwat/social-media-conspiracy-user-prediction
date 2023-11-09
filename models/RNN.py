@@ -7,7 +7,7 @@ optimizer settings, and regularization strategies.
 """
 
 import torch
-from torch.nn.utils.rnn import pad_sequence
+from torch.nn.utils.rnn import pack_padded_sequence, pad_sequence
 import torch.nn.functional as F
 from sentence_transformers import SentenceTransformer
 
@@ -39,27 +39,53 @@ class RNN(torch.nn.Module):
         self.dropout_rate = dropout_rate
 
     def forward(self, author_posts):
-        # This only runs if BERT is used to get embeddings
+        # Embeddings
         if self.sentence_transformer:
             assert [text for text in author_posts if text], "Batch is empty."
             author_embeddings = []
+            lengths = []
             for posts in author_posts:
                 post_embeddings = self.sentence_transformer.encode(
                     posts, convert_to_tensor=True, show_progress_bar=False
                 )
                 author_embeddings.append(post_embeddings)
+                # Stores length of each sequence for padding
+                lengths.append(post_embeddings.shape[0])
 
             # Pad the sequences to have the same length
             x_padded = pad_sequence(author_embeddings, batch_first=True)
 
         else:
+            # If we're not using SBERT embeddings we're using word embeddings.
             x_padded = pad_sequence(author_posts, batch_first=True)
 
-        # Process the sequence through the RNN
-        x, _ = self.rnn(x_padded)
-        # Apply dropout to the last output of the sequence (N/A if word embeddings)
+        # Running the RNN model.
+        # If we're using SBERT embeddings, we have some extra steps with the packed sequences
+        if self.sentence_transformer:
+            # Convert lengths to a tensor
+            lengths_tensor = torch.tensor(
+                lengths, dtype=torch.int64, device=x_padded.device
+            )
+
+            # Pack the padded sequences
+            x_packed = pack_padded_sequence(
+                x_padded, lengths_tensor, batch_first=True, enforce_sorted=False
+            )
+
+            # Process the sequence through the RNN
+            rnn_output, hidden_state = self.rnn(x_packed)
+
+            # As we're only using the last output, we can just use take the hidden_state
+            # hidden_state is a tensor of shape [num_layers * num_directions, batch, hidden_size]
+            # If batch_first=True, we need to transpose it to bring the batch dimension to dim 0
+            x = hidden_state.transpose(0, 1).contiguous().view(-1, self.rnn.hidden_size)
+        else:
+            # Process the sequence through the RNN
+            x, _ = self.rnn(x_padded)
+
+        # Apply dropout
         x = F.dropout(
-            x[:, -1, :] if self.sentence_transformer else x,
+            x,
             p=self.dropout_rate,
             training=self.training,
         )
