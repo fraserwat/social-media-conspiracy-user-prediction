@@ -2,7 +2,7 @@ import logging
 from training import grid_search
 from params import argparse_config as argparse
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # Getting arguments for training process
 parser = argparse.create_parser()

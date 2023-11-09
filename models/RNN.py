@@ -7,8 +7,9 @@ optimizer settings, and regularization strategies.
 """
 
 import torch
-from embedding.sentence_transformer import SentenceTransformer
 from torch.nn.utils.rnn import pad_sequence
+import torch.nn.functional as F
+from sentence_transformers import SentenceTransformer
 
 
 class RNN(torch.nn.Module):
@@ -35,7 +36,7 @@ class RNN(torch.nn.Module):
             input_size=self.input_size, hidden_size=64, batch_first=True
         )
         self.output = torch.nn.Linear(64, 1)
-        self.dropout = torch.nn.Dropout(dropout_rate)
+        self.dropout_rate = dropout_rate
 
     def forward(self, author_posts):
         # This only runs if BERT is used to get embeddings
@@ -57,7 +58,11 @@ class RNN(torch.nn.Module):
         # Process the sequence through the RNN
         x, _ = self.rnn(x_padded)
         # Apply dropout to the last output of the sequence (N/A if word embeddings)
-        x = self.dropout(x[:, -1, :] if self.sentence_transformer else x)
+        x = F.dropout(
+            x[:, -1, :] if self.sentence_transformer else x,
+            p=self.dropout_rate,
+            training=self.training,
+        )
         # Pass the final output through the linear layer and apply sigmoid
         x = torch.sigmoid(self.output(x))
         return x

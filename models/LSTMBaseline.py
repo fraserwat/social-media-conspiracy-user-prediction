@@ -10,7 +10,6 @@ strategies as the baseline models.
 """
 
 import torch.nn as nn
-from embedding.sentence_transformer import SentenceTransformer
 
 
 class BaselineLSTM(nn.Module):
@@ -28,8 +27,6 @@ class BaselineLSTM(nn.Module):
         out = self.lstm_batchnorm(out)
         out = self.dropout(out)
         out, _ = self.lstm2(out)
-        # Logic to put this back in (& replace next line) for model where nth_dimension > 2
-        # out = self.linear(out[:, -1, :])  # Many-to-One, taking the last output
         out = self.lstm_batchnorm(out)
         out = self.dropout(out)
         out = self.linear(out)

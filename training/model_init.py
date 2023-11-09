@@ -1,5 +1,5 @@
 import argparse
-from models import MLP, RNN, LSTM
+from models import MLP, RNN, LSTMBaseline, LSTMSentence
 from training import word_models, sentence_models
 from embedding import vectorise
 
@@ -9,7 +9,9 @@ def model_fn(inputs: dict, params: argparse.Namespace):
     max_features = params.max_features
 
     if "BERT" in model_type:
-        bert_model = params.transformer_model
+        # bert_model = params.transformer_model
+        bert_model = "sentence-transformers/all-MiniLM-L6-v2"
+        print(bert_model)
         if model_type.endswith("MLP"):
             results = sentence_models.sentence_embedded_model(
                 input_data=inputs,
@@ -29,7 +31,7 @@ def model_fn(inputs: dict, params: argparse.Namespace):
             results = sentence_models.sentence_embedded_model(
                 input_data=inputs,
                 transformer_model=bert_model,
-                model=LSTM.LSTM,
+                model=LSTMSentence.SentenceLSTM,
                 params=params,
             )
         else:
@@ -60,7 +62,7 @@ def model_fn(inputs: dict, params: argparse.Namespace):
             results = word_models.word_embedded_model(
                 input_data=inputs,
                 vectorize_layer=vectorise_fn,
-                model=LSTM.BaselineLSTM,
+                model=LSTMBaseline.BaselineLSTM,
                 params=params,
             )
         else:
