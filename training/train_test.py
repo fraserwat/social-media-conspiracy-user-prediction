@@ -70,10 +70,16 @@ def train_validate(
     return checkpoint_path
 
 
-def test_model(model, testing_data_loader, loss_function, checkpoint_path=None):
+def test_model(
+    model,
+    testing_data_loader,
+    loss_function,
+    checkpoint_path=None,
+    device=torch.device("cuda" if torch.cuda.is_available() else "cpu"),
+):
     if checkpoint_path is not None:
         logging.debug("Loading checkpoint from %s...", checkpoint_path)
-        model.load_state_dict(torch.load(checkpoint_path))
+        model.load_state_dict(torch.load(checkpoint_path, map_location=device))
     model.eval()
     test_loss = 0.0
     test_accuracy = 0.0

@@ -44,6 +44,7 @@ class SentenceLSTM(torch.nn.Module):
         )
         self.dropout_rate = dropout_rate
         self.output = torch.nn.Linear(hidden_size, 1)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, authors):
         authors_embeddings = []
@@ -53,7 +54,8 @@ class SentenceLSTM(torch.nn.Module):
         for author_posts in authors:
             post_embeddings = self.sentence_transformer.encode(
                 author_posts, convert_to_tensor=True, show_progress_bar=False
-            )
+            ).to(self.device)
+
             # Now posts_embeddings is a 2D tensor of shape [num_posts, embedding_dim]
             authors_embeddings.append(post_embeddings)
             # Each author has a different number of posts, so we keep lengths of each post
@@ -64,7 +66,7 @@ class SentenceLSTM(torch.nn.Module):
 
         # Convert list of lengths to a tensor
         lengths_tensor = torch.tensor(
-            authors_lengths, dtype=torch.int64, device=authors_padded.device
+            authors_lengths, dtype=torch.int64, device=self.device
         )
 
         # Pack the padded sequences into a PackedSequence object

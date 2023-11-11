@@ -29,8 +29,10 @@ def sentence_embedded_model(input_data, transformer_model, model, params):
     val_loader = create_data_loader(val_texts, val_labels, batch_size)
     test_loader = create_data_loader(test_texts, test_labels, batch_size)
 
-    # Initialise model
-    model = model(bert_model_path=transformer_model, dropout_rate=params.dropout_rate)
+    # Initialize the model and move it to the device
+    model = model(
+        bert_model_path=transformer_model, dropout_rate=params.dropout_rate
+    ).to(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
 
     # Use Binary Cross Entropy Loss and Adam optimizer
     loss = torch.nn.BCELoss()

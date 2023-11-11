@@ -37,6 +37,7 @@ class RNN(torch.nn.Module):
         )
         self.output = torch.nn.Linear(64, 1)
         self.dropout_rate = dropout_rate
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def forward(self, author_posts):
         # Embeddings
@@ -52,13 +53,15 @@ class RNN(torch.nn.Module):
                 # Stores length of each sequence for padding
                 lengths.append(post_embeddings.shape[0])
 
+            author_embeddings = [
+                embedding.to(self.device) for embedding in author_embeddings
+            ]
             # Pad the sequences to have the same length
             x_padded = pad_sequence(author_embeddings, batch_first=True)
-
         else:
             # If we're not using SBERT embeddings we're using word embeddings.
             x_padded = pad_sequence(author_posts, batch_first=True)
-
+        x_padded = x_padded.to(self.device)
         # Running the RNN model.
         # If we're using SBERT embeddings, we have some extra steps with the packed sequences
         if self.sentence_transformer:

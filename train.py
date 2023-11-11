@@ -1,8 +1,10 @@
+import torch
 import logging
 from training import grid_search
 from params import argparse_config as argparse
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
+logging.info("GPU Available: %s", torch.cuda.is_available())
 
 # Getting arguments for training process
 parser = argparse.create_parser()
